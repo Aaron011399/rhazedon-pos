@@ -8,73 +8,73 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f9fafb; -webkit-tap-highlight-color: transparent; }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
         .active-tab { color: #4f46e5; border-top: 3px solid #4f46e5; }
-        .hide { display: none; }
-        #reader__dashboard_section_csr button { background: #4f46e5 !important; color: white !important; border-radius: 8px !important; padding: 8px 16px !important; }
+        #reader { width: 100% !important; border: none !important; border-radius: 1rem; overflow: hidden; }
+        #reader video { border-radius: 1rem; object-fit: cover; }
         .scan-flash { animation: flash 0.3s ease-out; }
         @keyframes flash { 0% { background-color: #4f46e5; } 100% { background-color: transparent; } }
     </style>
 </head>
-<body class="bg-gray-50 pb-24">
+<body class="pb-24">
 
     <header class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-50">
-        <h1 class="text-xl font-extrabold tracking-tight text-center">Rhazedon Sari-sari Store</h1>
+        <h1 class="text-lg font-bold text-center tracking-tight">Rhazedon Sari-sari Store</h1>
         <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 hidden bg-green-500 text-white text-xs px-4 py-2 rounded-full shadow-lg z-[100]">Success!</div>
     </header>
 
     <main id="main-ui" class="max-w-md mx-auto p-4">
         
-        <section id="tab-checkout" class="tab-section">
-            <div class="bg-white rounded-2xl shadow-sm p-4 mb-4 border border-gray-100">
-                <div id="pos-reader" class="rounded-xl overflow-hidden bg-gray-100 mb-3"></div>
-                <div class="flex gap-2">
-                    <input type="text" id="manualInput" placeholder="Scan or Enter Barcode" class="flex-1 bg-gray-100 p-3 rounded-xl border-none text-sm outline-none">
-                    <button onclick="addToCartByBarcode()" class="bg-indigo-600 text-white px-6 rounded-xl font-bold active:scale-95 transition text-sm">Add</button>
-                </div>
+        <div class="bg-white rounded-2xl shadow-sm p-2 mb-4 border border-gray-100">
+            <div id="reader"></div>
+            <div id="scan-status" class="text-[10px] text-center text-gray-400 mt-2 font-bold uppercase tracking-widest">Scanner Ready</div>
+        </div>
+
+        <section id="tab-checkout" class="tab-section active">
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="manualInput" placeholder="Enter Barcode" class="flex-1 bg-white p-4 rounded-xl shadow-sm border-none text-sm outline-none ring-1 ring-gray-200">
+                <button onclick="addToCartByBarcode()" class="bg-indigo-600 text-white px-6 rounded-xl font-bold shadow-md active:scale-95">ADD</button>
             </div>
-            <div id="cartItems" class="space-y-4 mb-6 max-h-80 overflow-y-auto"></div>
-            <div class="border-t pt-4">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-gray-500 font-semibold">Total:</span>
-                    <span class="text-2xl font-black text-indigo-700">₱<span id="cartTotal">0.00</span></span>
+
+            <div class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
+                <h2 class="text-gray-400 text-[10px] font-black uppercase mb-4 tracking-widest">Current Cart</h2>
+                <div id="cartItems" class="space-y-3 mb-6"></div>
+                <div class="border-t pt-4">
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <span class="text-gray-500 font-bold">Total:</span>
+                        <span class="text-2xl font-black text-indigo-700">₱<span id="cartTotal">0.00</span></span>
+                    </div>
+                    <button onclick="processCheckout()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition">COMPLETE SALE</button>
                 </div>
-                <button onclick="processCheckout()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-extrabold text-lg shadow-lg active:scale-95 transition uppercase">Complete Sale</button>
             </div>
         </section>
 
-        <section id="tab-inventory" class="tab-section hide">
-            <div class="bg-indigo-50 p-4 rounded-2xl mb-6 border border-indigo-100">
-                <h2 id="invFormTitle" class="font-bold text-indigo-800 mb-4">Add Product Details</h2>
+        <section id="tab-inventory" class="tab-section">
+            <div class="bg-indigo-50 p-5 rounded-2xl mb-6 border border-indigo-100">
+                <h2 id="invFormTitle" class="font-black text-indigo-800 mb-4 text-sm uppercase">Add Product</h2>
                 <div class="space-y-3">
                     <input type="hidden" id="editId">
-                    
-                    <div id="inv-reader" class="hidden rounded-xl overflow-hidden bg-black mb-2 h-48"></div>
-                    
                     <input type="text" id="pName" placeholder="Product Name" class="w-full p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
-                    
                     <div class="flex gap-2">
                         <input type="number" id="pPrice" placeholder="Price" class="w-1/2 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
                         <input type="number" id="pQty" placeholder="Stock" class="w-1/2 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
                     </div>
-
-                    <div class="flex gap-2">
-                        <input type="text" id="pBarcode" placeholder="Barcode ID" class="flex-1 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
-                        <button onclick="toggleInventoryScanner()" id="invScanBtn" class="bg-indigo-600 text-white px-4 rounded-xl font-bold text-xs">SCAN</button>
-                    </div>
-
+                    <input type="text" id="pBarcode" placeholder="Barcode ID (Scan above)" class="w-full p-3 rounded-xl border-none ring-1 ring-indigo-300 text-sm font-bold text-indigo-700 bg-white">
+                    
                     <div class="flex gap-2 pt-2">
-                        <button onclick="addProduct()" class="flex-1 bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-md">Save Product</button>
-                        <button onclick="resetForm()" class="bg-gray-300 text-gray-700 px-4 rounded-xl font-bold text-xs">Clear</button>
+                        <button onclick="addProduct()" class="flex-1 bg-indigo-700 text-white py-3 rounded-xl font-bold shadow-md active:scale-95">Save Item</button>
+                        <button onclick="resetForm()" class="bg-gray-300 text-gray-700 px-4 rounded-xl font-bold text-xs uppercase">Clear</button>
                     </div>
                 </div>
             </div>
             <div id="inventoryList" class="space-y-3"></div>
         </section>
 
-        <section id="tab-reports" class="tab-section hide">
-            <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 flex justify-between items-center">
-                <div><p class="text-gray-500 text-xs font-bold uppercase">Daily Total</p><h3 class="text-2xl font-black text-indigo-700">₱<span id="repDailyRev">0</span></h3></div>
+        <section id="tab-reports" class="tab-section">
+            <div class="bg-white rounded-2xl p-6 shadow-sm mb-4 flex justify-between items-center border border-gray-100">
+                <div><p class="text-gray-400 text-[10px] font-black uppercase">Revenue</p><h3 class="text-3xl font-black text-indigo-700">₱<span id="repDailyRev">0</span></h3></div>
                 <input type="date" id="reportDate" onchange="renderReports()" class="bg-gray-100 rounded-lg p-2 text-xs border-none font-bold">
             </div>
             <div id="repLogs" class="space-y-3"></div>
@@ -91,159 +91,89 @@
         let inventory = JSON.parse(localStorage.getItem('rhz_inv')) || [];
         let sales = JSON.parse(localStorage.getItem('rhz_sales')) || [];
         let cart = [];
+        let scanner;
+        let currentTab = 'checkout';
         let isCooldown = false;
-        
-        let posScanner = new Html5Qrcode("pos-reader");
-        let invScanner = new Html5Qrcode("inv-reader");
 
-        // START POS SCANNER BY DEFAULT
-        window.onload = () => { startPOS(); document.getElementById('reportDate').valueAsDate = new Date(); };
+        // Initialize App
+        window.addEventListener('load', async () => {
+            document.getElementById('reportDate').valueAsDate = new Date();
+            initScanner();
+        });
+
+        async function initScanner() {
+            scanner = new Html5Qrcode("reader");
+            try {
+                await scanner.start(
+                    { facingMode: "environment" }, 
+                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                    onScanSuccess
+                );
+            } catch (err) {
+                document.getElementById('reader').innerHTML = `<div class="p-8 text-center text-red-500 text-xs font-bold">Camera Blocked or Not Found.<br>Please use HTTPS and Allow Permissions.</div>`;
+            }
+        }
+
+        function onScanSuccess(txt) {
+            if (isCooldown) return;
+
+            if (currentTab === 'checkout') {
+                document.getElementById('manualInput').value = txt;
+                addToCartByBarcode();
+            } else if (currentTab === 'inventory') {
+                document.getElementById('pBarcode').value = txt;
+                showToast("Barcode Captured!");
+                triggerFeedback();
+            }
+
+            // Global 1.5s delay to prevent double scans
+            isCooldown = true;
+            document.getElementById('scan-status').innerText = "WAITING...";
+            setTimeout(() => { 
+                isCooldown = false; 
+                document.getElementById('scan-status').innerText = "SCANNER READY";
+            }, 1500);
+        }
 
         function switchTab(id) {
-            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hide'));
-            document.getElementById('tab-' + id).classList.remove('hide');
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-tab', 'text-indigo-600'));
+            currentTab = id;
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('tab-' + id).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-tab'));
             event.currentTarget.classList.add('active-tab');
 
-            // Handle Scanners
-            stopAllScanners();
-            if(id === 'checkout') startPOS();
             if(id === 'inventory') renderInventory();
             if(id === 'reports') renderReports();
         }
 
-        async function stopAllScanners() {
-            if(posScanner.isScanning) await posScanner.stop();
-            if(invScanner.isScanning) await invScanner.stop();
-            document.getElementById('inv-reader').classList.add('hide');
-            document.getElementById('invScanBtn').innerText = "SCAN";
-        }
-
-        function startPOS() {
-            posScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-                document.getElementById('manualInput').value = txt;
-                addToCartByBarcode();
-            }).catch(err => console.log(err));
-        }
-
-        async function toggleInventoryScanner() {
-            const readerDiv = document.getElementById('inv-reader');
-            const btn = document.getElementById('invScanBtn');
-
-            if(invScanner.isScanning) {
-                await invScanner.stop();
-                readerDiv.classList.add('hide');
-                btn.innerText = "SCAN";
-            } else {
-                readerDiv.classList.remove('hide');
-                btn.innerText = "STOP";
-                invScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 200 }, (txt) => {
-                    document.getElementById('pBarcode').value = txt;
-                    triggerFeedback();
-                    showToast("Barcode Scanned!");
-                    toggleInventoryScanner(); // Close scanner after scan
-                });
-            }
-        }
-
-        function addProduct() {
-            const name = document.getElementById('pName').value;
-            const price = parseFloat(document.getElementById('pPrice').value);
-            const qty = parseInt(document.getElementById('pQty').value) || 0;
-            const barcode = document.getElementById('pBarcode').value;
-            const editId = document.getElementById('editId').value;
-
-            if(!name || isNaN(price) || !barcode) return showToast("Please fill all fields", true);
-
-            if(editId) {
-                const i = inventory.findIndex(p => p.id == editId);
-                inventory[i] = { ...inventory[i], name, price, qty, barcode };
-            } else {
-                inventory.push({ id: Date.now(), name, price, qty, barcode });
-            }
-
-            localStorage.setItem('rhz_inv', JSON.stringify(inventory));
-            resetForm(); renderInventory();
-            showToast("Saved Successfully");
-        }
-
-        function resetForm() {
-            ['pName', 'pPrice', 'pQty', 'pBarcode', 'editId'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('invFormTitle').innerText = "Add Product Details";
-        }
-
-        function renderInventory() {
-            const list = document.getElementById('inventoryList');
-            list.innerHTML = inventory.map(p => `
-                <div class="bg-white p-3 rounded-xl flex items-center justify-between shadow-sm border border-gray-100">
-                    <div>
-                        <p class="font-bold text-sm">${p.name}</p>
-                        <p class="text-indigo-600 font-bold text-xs">₱${p.price.toFixed(2)}</p>
-                        <p class="text-[10px] text-gray-400">BC: ${p.barcode}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold ${p.qty <= 5 ? 'text-red-500' : 'text-gray-400'} uppercase">Stock: ${p.qty}</p>
-                        <div class="flex gap-2 mt-1">
-                            <button onclick="editProduct(${p.id})" class="text-indigo-600 text-xs font-bold">EDIT</button>
-                            <button onclick="deleteProd(${p.id})" class="text-red-500 text-xs font-bold">DEL</button>
-                        </div>
-                    </div>
-                </div>`).join('');
-        }
-
-        function editProduct(id) {
-            const p = inventory.find(i => i.id === id);
-            document.getElementById('pName').value = p.name;
-            document.getElementById('pPrice').value = p.price;
-            document.getElementById('pQty').value = p.qty;
-            document.getElementById('pBarcode').value = p.barcode;
-            document.getElementById('editId').value = p.id;
-            document.getElementById('invFormTitle').innerText = "Editing Item";
-            window.scrollTo(0,0);
-        }
-
-        function deleteProd(id) { if(confirm("Delete product?")) { inventory = inventory.filter(p => p.id !== id); localStorage.setItem('rhz_inv', JSON.stringify(inventory)); renderInventory(); } }
-
+        // POS LOGIC
         function addToCartByBarcode() {
-            if(isCooldown) return;
             const bc = document.getElementById('manualInput').value;
             const item = inventory.find(p => p.barcode === bc);
-            
             if(item) {
-                if(item.qty <= 0) return showToast("No stock!", true);
+                if(item.qty <= 0) return showToast("Out of Stock!", true);
                 const ci = cart.findIndex(i => i.barcode === bc);
                 if(ci > -1) {
                     if(cart[ci].buyQty < item.qty) cart[ci].buyQty++;
-                    else return showToast("Stock limit!", true);
+                    else return showToast("Max stock reached", true);
                 } else { cart.push({...item, buyQty: 1}); }
-                
                 updateCartUI();
-                document.getElementById('manualInput').value = "";
                 triggerFeedback();
-                isCooldown = true;
-                setTimeout(() => isCooldown = false, 1500);
-            } else { showToast("Item not found", true); }
-        }
-
-        function triggerFeedback() {
-            document.getElementById('main-ui').classList.add('scan-flash');
-            setTimeout(() => document.getElementById('main-ui').classList.remove('scan-flash'), 300);
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = audioCtx.createOscillator();
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            osc.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                document.getElementById('manualInput').value = "";
+            } else { showToast("Item not in Inventory", true); }
         }
 
         function updateCartUI() {
             let total = 0;
             document.getElementById('cartItems').innerHTML = cart.map((item, idx) => {
                 total += item.price * item.buyQty;
-                return `<div class="bg-gray-50 p-3 rounded-xl flex justify-between items-center">
-                    <div><p class="font-bold text-sm">${item.name}</p><p class="text-xs text-gray-500">₱${item.price.toFixed(2)}</p></div>
+                return `<div class="bg-gray-50 p-4 rounded-xl flex justify-between items-center border border-gray-100">
+                    <div><p class="font-bold text-sm">${item.name}</p><p class="text-xs text-gray-500 font-bold">₱${item.price.toFixed(2)}</p></div>
                     <div class="flex items-center gap-3">
-                        <button onclick="changeQty(${idx},-1)" class="w-6 h-6 bg-white border rounded font-bold">-</button>
-                        <span class="text-sm font-bold">${item.buyQty}</span>
-                        <button onclick="changeQty(${idx},1)" class="w-6 h-6 bg-white border rounded font-bold">+</button>
+                        <button onclick="changeQty(${idx},-1)" class="w-8 h-8 bg-white border rounded-lg font-black text-indigo-600 shadow-sm">-</button>
+                        <span class="text-sm font-black">${item.buyQty}</span>
+                        <button onclick="changeQty(${idx},1)" class="w-8 h-8 bg-white border rounded-lg font-black text-indigo-600 shadow-sm">+</button>
                     </div>
                 </div>`;
             }).join('');
@@ -264,24 +194,89 @@
             sales.push({ id: Date.now(), date: new Date().toISOString().split('T')[0], time: new Date().toLocaleTimeString(), items: [...cart], total: cart.reduce((s,i)=>s+(i.price*i.buyQty),0) });
             localStorage.setItem('rhz_sales', JSON.stringify(sales));
             localStorage.setItem('rhz_inv', JSON.stringify(inventory));
-            cart = []; updateCartUI(); showToast("Sale Completed!");
+            cart = []; updateCartUI(); showToast("Sale Successful!");
         }
 
+        // INVENTORY LOGIC
+        function addProduct() {
+            const name = document.getElementById('pName').value, price = parseFloat(document.getElementById('pPrice').value), 
+                  qty = parseInt(document.getElementById('pQty').value) || 0, barcode = document.getElementById('pBarcode').value,
+                  editId = document.getElementById('editId').value;
+
+            if(!name || isNaN(price) || !barcode) return showToast("Check all fields", true);
+
+            if(editId) {
+                const i = inventory.findIndex(p => p.id == editId);
+                inventory[i] = { ...inventory[i], name, price, qty, barcode };
+            } else {
+                inventory.push({ id: Date.now(), name, price, qty, barcode });
+            }
+
+            localStorage.setItem('rhz_inv', JSON.stringify(inventory));
+            resetForm(); renderInventory();
+            showToast("Inventory Saved");
+        }
+
+        function renderInventory() {
+            document.getElementById('inventoryList').innerHTML = inventory.map(p => `
+                <div class="bg-white p-4 rounded-xl flex justify-between items-center shadow-sm border border-gray-100">
+                    <div><p class="font-black text-sm">${p.name}</p><p class="text-indigo-600 font-bold text-xs">₱${p.price.toFixed(2)}</p></div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold ${p.qty <= 5 ? 'text-red-500' : 'text-gray-400'}">STOCK: ${p.qty}</p>
+                        <div class="flex gap-3 mt-1">
+                            <button onclick="editProduct(${p.id})" class="text-indigo-600 text-xs font-bold uppercase">Edit</button>
+                            <button onclick="deleteProd(${p.id})" class="text-red-500 text-xs font-bold uppercase">Del</button>
+                        </div>
+                    </div>
+                </div>`).join('');
+        }
+
+        function editProduct(id) {
+            const p = inventory.find(i => i.id === id);
+            document.getElementById('pName').value = p.name;
+            document.getElementById('pPrice').value = p.price;
+            document.getElementById('pQty').value = p.qty;
+            document.getElementById('pBarcode').value = p.barcode;
+            document.getElementById('editId').value = p.id;
+            document.getElementById('invFormTitle').innerText = "Editing: " + p.name;
+            window.scrollTo(0,0);
+        }
+
+        function deleteProd(id) { if(confirm("Delete product?")) { inventory = inventory.filter(p => p.id !== id); localStorage.setItem('rhz_inv', JSON.stringify(inventory)); renderInventory(); } }
+
+        function resetForm() {
+            ['pName', 'pPrice', 'pQty', 'pBarcode', 'editId'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('invFormTitle').innerText = "Add Product";
+        }
+
+        // REPORTS
         function renderReports() {
             const d = document.getElementById('reportDate').value;
             const filtered = sales.filter(s => s.date === d);
             document.getElementById('repDailyRev').innerText = filtered.reduce((s,i)=>s+i.total,0).toLocaleString();
             document.getElementById('repLogs').innerHTML = filtered.slice().reverse().map(s => `
-                <div class="p-3 bg-white border rounded-xl text-xs">
-                    <div class="flex justify-between font-bold"><span>${s.time}</span><span class="text-indigo-600">₱${s.total.toFixed(2)}</span></div>
-                    <div class="text-gray-400 mt-1">${s.items.map(i=>`${i.buyQty}x ${i.name}`).join(', ')}</div>
-                </div>`).join('');
+                <div class="p-4 bg-white border border-gray-100 rounded-xl shadow-sm">
+                    <div class="flex justify-between font-black text-xs"><span>${s.time}</span><span class="text-green-600">₱${s.total.toFixed(2)}</span></div>
+                    <div class="text-[10px] text-gray-400 font-bold uppercase mt-1">${s.items.map(i=>`${i.buyQty}x ${i.name}`).join(', ')}</div>
+                </div>`).join('') || '<p class="text-center text-gray-400 text-xs mt-4">No sales recorded</p>';
         }
 
+        // UTILITIES
         function showToast(m, e=false) {
             const t = document.getElementById('toast');
             t.innerText = m; t.className = `fixed top-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full shadow-lg z-[100] text-xs font-bold text-white ${e?'bg-red-500':'bg-green-500'}`;
             t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'), 2000);
+        }
+
+        function triggerFeedback() {
+            document.getElementById('main-ui').classList.add('scan-flash');
+            setTimeout(() => document.getElementById('main-ui').classList.remove('scan-flash'), 300);
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } catch(e) {}
         }
     </script>
 </body>
