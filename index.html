@@ -12,7 +12,6 @@
         .active-tab { color: #4f46e5; border-top: 3px solid #4f46e5; }
         .hide { display: none; }
         #reader__dashboard_section_csr button { background: #4f46e5 !important; color: white !important; border-radius: 8px !important; padding: 8px 16px !important; }
-        /* Visual flash effect */
         .scan-flash { animation: flash 0.3s ease-out; }
         @keyframes flash { 0% { background-color: #4f46e5; } 100% { background-color: transparent; } }
     </style>
@@ -33,7 +32,6 @@
                     <input type="text" id="manualInput" placeholder="Scan or Enter Barcode" class="flex-1 bg-gray-100 p-3 rounded-xl border-none text-sm outline-none">
                     <button onclick="addToCartByBarcode()" class="bg-indigo-600 text-white px-6 rounded-xl font-bold active:scale-95 transition text-sm">Add</button>
                 </div>
-                <p class="text-[10px] text-center text-gray-400 mt-2">Scanner has a 2-second delay between items</p>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm p-4 border border-gray-100">
@@ -54,20 +52,27 @@
                 <h2 id="invFormTitle" class="font-bold text-indigo-800 mb-4">Add/Edit Product</h2>
                 <div class="space-y-3">
                     <input type="hidden" id="editId">
-                    <div class="relative w-full h-24 bg-gray-200 rounded-xl overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <input type="file" id="prodImg" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 z-10" onchange="handleImage(this)">
-                        <img id="prevImg" class="absolute inset-0 w-full h-full object-cover hidden">
-                        <span class="text-xs font-bold text-gray-500">📸 ADD PHOTO</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="relative w-full h-24 bg-gray-200 rounded-xl overflow-hidden flex items-center justify-center border-2 border-dashed border-gray-300">
+                            <input type="file" id="prodImg" accept="image/*" capture="environment" class="absolute inset-0 opacity-0 z-10" onchange="handleImage(this)">
+                            <img id="prevImg" class="absolute inset-0 w-full h-full object-cover hidden">
+                            <span class="text-[10px] font-bold text-gray-500">📸 PHOTO</span>
+                        </div>
+                        <button onclick="startInventoryScan()" class="h-24 bg-indigo-100 border-2 border-dashed border-indigo-300 rounded-xl flex flex-col items-center justify-center text-indigo-600 font-bold active:bg-indigo-200">
+                            <span class="text-xl">🔍</span>
+                            <span class="text-[10px]">SCAN BARCODE</span>
+                        </button>
                     </div>
+                    
                     <input type="text" id="pName" placeholder="Product Name" class="w-full p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
                     <div class="flex gap-2">
                         <input type="number" id="pPrice" placeholder="Price" class="w-1/3 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
                         <input type="number" id="pQty" placeholder="Stock" class="w-1/3 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
-                        <input type="text" id="pBarcode" placeholder="Barcode" class="w-1/3 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm">
+                        <input type="text" id="pBarcode" placeholder="Barcode ID" class="w-1/3 p-3 rounded-xl border-none ring-1 ring-gray-200 text-sm bg-white">
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="addProduct()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md">Save</button>
-                        <button onclick="resetForm()" class="bg-gray-300 text-gray-700 px-4 rounded-xl font-bold">Cancel</button>
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="addProduct()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold shadow-md active:scale-95">Save Product</button>
+                        <button onclick="resetForm()" class="bg-gray-300 text-gray-700 px-4 rounded-xl font-bold active:scale-95 text-xs">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -76,7 +81,7 @@
 
         <section id="tab-reports" class="tab-section hide">
             <div class="bg-white rounded-2xl p-4 shadow-sm mb-4 flex justify-between items-center">
-                <div><p class="text-gray-500 text-[10px] font-bold uppercase">Revenue</p><h3 class="text-2xl font-black text-indigo-700">₱<span id="repDailyRev">0</span></h3></div>
+                <div><p class="text-gray-500 text-[10px] font-bold uppercase">Daily Revenue</p><h3 class="text-2xl font-black text-indigo-700">₱<span id="repDailyRev">0</span></h3></div>
                 <input type="date" id="reportDate" onchange="renderReports()" class="bg-gray-100 rounded-lg p-2 text-xs border-none font-bold">
             </div>
             <div id="repLogs" class="space-y-3 max-h-80 overflow-y-auto"></div>
@@ -95,17 +100,60 @@
         let sales = JSON.parse(localStorage.getItem('rhz_sales')) || [];
         let cart = [];
         let currentImgBase64 = "";
-        let isScanning = false; // COOLDOWN FLAG
+        let isScanning = false;
+        let scanner;
+
+        // Initialize Scanner on load
+        window.addEventListener('load', () => {
+            scanner = new Html5Qrcode("reader");
+            startPOSScan(); // Default to POS mode
+        });
 
         function switchTab(id) {
             document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hide'));
             document.getElementById('tab-' + id).classList.remove('hide');
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-tab', 'text-indigo-600'));
             event.currentTarget.classList.add('active-tab');
-            if(id === 'inventory') renderInventory();
-            if(id === 'reports') renderReports();
+            
+            // Re-route scanner when switching tabs
+            if(id === 'checkout') startPOSScan();
+            else if(id === 'inventory') renderInventory();
+            else if(id === 'reports') renderReports();
         }
 
+        // --- SCANNER MODES ---
+        function startPOSScan() {
+            scanner.stop().then(() => {
+                scanner.start({ facingMode: "environment" }, { fps: 5, qrbox: 250 }, (txt) => {
+                    document.getElementById('manualInput').value = txt;
+                    addToCartByBarcode();
+                });
+            }).catch(() => {
+                scanner.start({ facingMode: "environment" }, { fps: 5, qrbox: 250 }, (txt) => {
+                    document.getElementById('manualInput').value = txt;
+                    addToCartByBarcode();
+                });
+            });
+        }
+
+        function startInventoryScan() {
+            // Momentarily switch camera to fill the barcode field in the form
+            switchTab('checkout');
+            showToast("Scan the product barcode...");
+            
+            const originalAdd = addToCartByBarcode; // Save original function
+            
+            // Overwrite function temporarily to just fill the form
+            addToCartByBarcode = function() {
+                const bc = document.getElementById('manualInput').value;
+                document.getElementById('pBarcode').value = bc;
+                switchTab('inventory'); // Go back to form
+                showToast("Barcode Captured!");
+                addToCartByBarcode = originalAdd; // Restore original function
+            };
+        }
+
+        // --- INVENTORY LOGIC ---
         function handleImage(input) {
             const file = input.files[0];
             const reader = new FileReader();
@@ -179,55 +227,42 @@
             document.getElementById('pBarcode').value = p.barcode;
             document.getElementById('editId').value = p.id;
             document.getElementById('invFormTitle').innerText = "Editing: " + p.name;
+            if(p.img) {
+                document.getElementById('prevImg').src = p.img;
+                document.getElementById('prevImg').classList.remove('hide');
+            }
             window.scrollTo(0,0);
         }
 
         function deleteProd(id) { if(confirm("Delete?")) { inventory = inventory.filter(p => p.id !== id); localStorage.setItem('rhz_inv', JSON.stringify(inventory)); renderInventory(); } }
 
-        // --- IMPROVED ADD TO CART WITH COOLDOWN ---
+        // --- POS LOGIC ---
         function addToCartByBarcode() {
-            if(isScanning) return; // Ignore if in cooldown
-
+            if(isScanning) return;
             const bc = document.getElementById('manualInput').value;
             const item = inventory.find(p => p.barcode === bc);
-            
             if(item) {
-                if(item.qty <= 0) {
-                    showToast("Out of Stock!", true);
-                    return;
-                }
-
+                if(item.qty <= 0) return showToast("Out of Stock!", true);
                 const cartIndex = cart.findIndex(i => i.barcode === bc);
                 if(cartIndex > -1) {
                     if(cart[cartIndex].buyQty < item.qty) cart[cartIndex].buyQty++;
-                    else { showToast("Max Stock reached", true); return; }
-                } else {
-                    cart.push({...item, buyQty: 1});
-                }
-                
+                    else return showToast("Limit reached", true);
+                } else { cart.push({...item, buyQty: 1}); }
                 updateCartUI();
                 document.getElementById('manualInput').value = "";
-                
-                // --- SUCCESS FEEDBACK ---
-                showToast("Added: " + item.name);
-                triggerVisualFeedback();
-                
-                // START COOLDOWN (2 SECONDS)
+                showToast("Added");
+                triggerFeedback();
                 isScanning = true;
                 setTimeout(() => { isScanning = false; }, 2000);
-            } else {
-                showToast("Product not found", true);
-            }
+            } else { showToast("Not found", true); }
         }
 
-        function triggerVisualFeedback() {
-            const main = document.getElementById('main-ui');
-            main.classList.add('scan-flash');
-            setTimeout(() => main.classList.remove('scan-flash'), 300);
-            // Optional: Simple beep sound
+        function triggerFeedback() {
+            document.getElementById('main-ui').classList.add('scan-flash');
+            setTimeout(() => document.getElementById('main-ui').classList.remove('scan-flash'), 300);
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
         }
 
@@ -279,7 +314,7 @@
                 <div class="text-xs bg-white p-3 rounded-xl border mb-2 shadow-sm">
                     <div class="flex justify-between font-black"><span>${s.time}</span><span class="text-green-600">₱${s.total.toFixed(2)}</span></div>
                     <p class="text-[10px] text-gray-400 uppercase font-bold">${s.items.map(i=>`${i.buyQty}x ${i.name}`).join(', ')}</p>
-                </div>`).join('') || '<p class="text-center text-gray-400 text-xs">No sales</p>';
+                </div>`).join('');
         }
 
         function showToast(msg, err = false) {
@@ -293,13 +328,6 @@
             const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
             a.download = `sales.csv`; a.click();
         }
-
-        // --- SCANNER WITH LOW FPS TO REDUCE SPEED ---
-        const scanner = new Html5Qrcode("reader");
-        scanner.start({ facingMode: "environment" }, { fps: 5, qrbox: 250 }, (txt) => {
-            document.getElementById('manualInput').value = txt;
-            addToCartByBarcode();
-        }).catch(() => console.log("Camera fail"));
 
         document.getElementById('reportDate').valueAsDate = new Date();
     </script>
